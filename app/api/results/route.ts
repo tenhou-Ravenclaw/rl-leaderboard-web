@@ -30,10 +30,19 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let text: string;
+  try {
+    text = await request.text();
+  } catch (e) {
+    console.error("[api/results] Failed to read body:", e);
+    return Response.json({ error: "Failed to read request body" }, { status: 400 });
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
+    body = JSON.parse(text);
+  } catch (e) {
+    console.error("[api/results] Failed to parse JSON:", e, "body:", text.slice(0, 200));
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
@@ -46,6 +55,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  await appendResult(result as unknown as EvalResult);
+  try {
+    await appendResult(result as unknown as EvalResult);
+  } catch (e) {
+    console.error("[api/results] Failed to store result:", e);
+    return Response.json({ error: "Failed to store result" }, { status: 500 });
+  }
+
   return Response.json({ ok: true }, { status: 201 });
 }
