@@ -4,6 +4,7 @@ import { LeaderboardTable } from "@/components/LeaderboardTable";
 export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
+  const kvReady = !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
   const results = await getAllResults();
   const leaderboard = computeLeaderboard(results);
   const updatedAt =
@@ -13,6 +14,13 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="space-y-6">
+      {!kvReady && (
+        <div className="rounded-md bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-800">
+          <strong>KV 未設定:</strong> Vercel KV の環境変数が見つかりません。
+          <code className="mx-1 font-mono">KV_REST_API_URL</code> と
+          <code className="mx-1 font-mono">KV_REST_API_TOKEN</code> を設定してください。
+        </div>
+      )}
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">Current Rankings</h1>
