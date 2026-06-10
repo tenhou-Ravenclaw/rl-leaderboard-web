@@ -1,26 +1,32 @@
+import { Redis } from "@upstash/redis";
 import type { EvalResult } from "./types";
 
 const KEY = "rl:results";
 
-function isKvConfigured(): boolean {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+function isRedisConfigured(): boolean {
+  return !!(
+    process.env.UPSTASH_REDIS_REST_URL &&
+    process.env.UPSTASH_REDIS_REST_TOKEN
+  );
 }
 
-async function getKv() {
-  const { kv } = await import("@vercel/kv");
-  return kv;
+function getRedis(): Redis {
+  return new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  });
 }
 
 export async function appendResult(result: EvalResult): Promise<void> {
-  const kv = await getKv();
-  await kv.lpush(KEY, JSON.stringify(result));
+  const redis = getRedis();
+  await redis.lpush(KEY, JSON.stringify(result));
 }
 
 export async function getAllResults(): Promise<EvalResult[]> {
-  if (!isKvConfigured()) return [];
+  if (!isRedisConfigured()) return [];
   try {
-    const kv = await getKv();
-    const raw = await kv.lrange<string>(KEY, 0, -1);
+    const redis = getRedis();
+    const raw = await redis.lrange<string>(KEY, 0, -1);
     return raw.map((r) => (typeof r === "string" ? JSON.parse(r) : r));
   } catch {
     return [];
